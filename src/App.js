@@ -1,6 +1,7 @@
 import React, {useContext, useState} from 'react'
 import './App.css'
 import {Input, Button} from 'antd'
+import {Bar} from 'react-chartjs-2'
 
 const context = React.createContext()
 
@@ -14,7 +15,7 @@ function App() {
   }}>
     <div className="App">
       <Header />
-      {state.error && <div>{state.error}</div>}
+      <Body />
     </div>
   </context.Provider>
 }
@@ -36,6 +37,31 @@ function Header(){
       Search
     </Button>
   </header>
+}
+
+function Body(){
+  const ctx = useContext(context)
+  const {error, weather} = ctx
+  let data
+  if(weather){
+    console.log(weather)
+    data = {
+      labels: weather.hourly.data.map(d=>d.time),
+      datasets: [{
+        label:'Temperature',
+        data: weather.hourly.data.map(d=>d.temperature)
+      }]
+    }
+  }
+  console.log(data)
+  return <div className="App-body">
+    {error && <div className="error">{error}</div>}
+    {data && <div>
+      <Bar data={data}
+        width={800} height={400}
+      />
+    </div>}
+  </div>
 }
 
 async function search({searchTerm, set}){
