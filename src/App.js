@@ -2,6 +2,7 @@ import React, {useContext, useState} from 'react'
 import './App.css'
 import {Input, Button} from 'antd'
 import {Bar} from 'react-chartjs-2'
+import * as moment from 'moment'
 
 const context = React.createContext()
 
@@ -22,18 +23,19 @@ function App() {
 
 function Header(){
   const ctx = useContext(context)
+  const {loading, searchTerm} = ctx
   return <header className="App-header">
     <Input 
-      value={ctx.searchTerm}
+      value={searchTerm} disabled={loading}
       onChange={e=> ctx.set({searchTerm: e.target.value})}
       style={{height:'3rem',fontSize:'2rem'}} 
       onKeyPress={e=>{
-        if(e.key==='Enter' && ctx.searchTerm) search(ctx)
+        if(e.key==='Enter' && searchTerm) search(ctx)
       }}
     />
     <Button style={{marginLeft:5,height:'3rem'}}
       onClick={()=> search(ctx)} type="primary"
-      disabled={!ctx.searchTerm}>
+      disabled={!searchTerm} loading={loading}>
       Search
     </Button>
   </header>
@@ -46,10 +48,14 @@ function Body(){
   if(weather){
     console.log(weather)
     data = {
-      labels: weather.hourly.data.map(d=>d.time),
+      labels: weather.hourly.data.map(d=> moment(d.time*1000).format('dd hh:mm') ),
       datasets: [{
         label:'Temperature',
-        data: weather.hourly.data.map(d=>d.temperature)
+        data: weather.hourly.data.map(d=>d.temperature),
+        backgroundColor: 'rgba(132,99,255,0.2)',
+        borderColor: 'rgba(132,99,255,1)',
+        hoverBackgroundColor: 'rgba(132,99,255,0.4)',
+        hoverBorderColor: 'rgba(132,99,255,1)',
       }]
     }
   }
@@ -67,7 +73,7 @@ function Body(){
 async function search({searchTerm, set}){
   try {
     const term = searchTerm
-    set({searchTerm:'', error:''})
+    set({error:'', loading:true})
 
     const osmurl = `https://nominatim.openstreetmap.org/search/${term}?format=json`
     const r = await fetch(osmurl)
@@ -82,7 +88,7 @@ async function search({searchTerm, set}){
     const url = `https://cors-anywhere.herokuapp.com/https://api.darksky.net/forecast/${key}/${city.lat},${city.lon}`
     const r2 = await fetch(url)
     const weather = await r2.json()
-    set({weather})
+    set({weather, loading:false, searchTerm:''})
   } catch(e) {
     set({error: e.message})
   }
